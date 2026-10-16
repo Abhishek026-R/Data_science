@@ -27,4 +27,9 @@ python croup.py --predict 90 42 43 20.88 82 6.5 202.9
 GitHub Actions installs the dependencies, checks the script, then trains and
 evaluates the models on pushes and pull requests targeting `main`. You can also
 start it manually from the repository's **Actions** tab. Interactive prediction
-is skipped unless values are supplied with `--predict`.
+is skipped unless values are supplied with `--predict`. The run uploads the
+generated charts as the `crop-recommendation-charts` artifact. Open the
+successful workflow run and download it from the **Artifacts** section.
+
+Charts are also saved to the `outputs` directory when you run the script
+locally. Use `--output-dir` to choose another directory.

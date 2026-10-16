@@ -45,7 +45,20 @@ parser.add_argument(
     metavar=("N", "P", "K", "TEMP", "HUMIDITY", "PH", "RAINFALL"),
     help="Optionally predict a crop using seven feature values in that order.",
 )
+parser.add_argument(
+    "--output-dir",
+    type=Path,
+    default=Path(__file__).resolve().with_name("outputs"),
+    help="Directory where generated chart images are saved.",
+)
 args = parser.parse_args()
+args.output_dir.mkdir(parents=True, exist_ok=True)
+
+
+def save_figure(filename: str) -> None:
+    plt.savefig(args.output_dir / filename, dpi=150, bbox_inches="tight")
+    plt.show()
+    plt.close()
 
 print("=" * 60)
 print("       CROP RECOMMENDATION SYSTEM")
@@ -104,7 +117,7 @@ plt.xlabel("Crop")
 plt.ylabel("Number of Samples")
 plt.xticks(rotation=45)
 plt.tight_layout()
-plt.show()
+save_figure("crop_distribution.png")
 
 plt.figure(figsize=(9, 6))
 sns.heatmap(
@@ -115,7 +128,7 @@ sns.heatmap(
 )
 plt.title("Correlation Between Soil and Weather Features")
 plt.tight_layout()
-plt.show()
+save_figure("feature_correlation.png")
 
 # 5. FEATURE SELECTION AND DATA SPLITTING
 X = df[features]
@@ -192,7 +205,7 @@ for i, value in enumerate(results["Accuracy (%)"]):
     plt.text(i, value + 1, f"{value:.2f}%", ha="center")
 
 plt.tight_layout()
-plt.show()
+save_figure("model_accuracy.png")
 
 # 9. CLASSIFICATION REPORT
 print("\nRANDOM FOREST CLASSIFICATION REPORT")
@@ -218,7 +231,7 @@ plt.ylabel("Actual Crop")
 plt.xticks(rotation=90)
 plt.yticks(rotation=0)
 plt.tight_layout()
-plt.show()
+save_figure("confusion_matrix.png")
 
 # 11. FEATURE IMPORTANCE
 importance = pd.DataFrame({
@@ -239,7 +252,7 @@ plt.gca().invert_yaxis()
 plt.title("Feature Importance - Random Forest")
 plt.xlabel("Importance")
 plt.tight_layout()
-plt.show()
+save_figure("feature_importance.png")
 
 # 12. USER INPUT AND CROP PREDICTION
 print("\n" + "=" * 60)

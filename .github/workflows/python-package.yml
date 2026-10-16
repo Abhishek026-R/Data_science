@@ -31,3 +31,11 @@ jobs:
       run: flake8 croup.py --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Train and evaluate crop models
       run: python croup.py
+    - name: Upload generated charts
+      if: matrix.python-version == '3.11'
+      uses: actions/upload-artifact@v4
+      with:
+        name: crop-recommendation-charts
+        path: outputs/*.png
+        if-no-files-found: error
+        retention-days: 30
