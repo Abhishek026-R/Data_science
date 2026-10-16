@@ -1,17 +1,25 @@
 # ============================================================
 # CROP RECOMMENDATION SYSTEM USING SOIL DATA
 # Domain: Data Science / Agriculture
-# Platform: Google Colab
+# Platform: Python / GitHub Actions
 # Algorithms: Decision Tree and Random Forest
 # ============================================================
 
 # 1. IMPORT LIBRARIES
+import argparse
+from pathlib import Path
+import sys
+
 import pandas as pd
 import numpy as np
+import matplotlib
+
+if not sys.stdin.isatty():
+    matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from google.colab import files
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -21,16 +29,30 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
+parser = argparse.ArgumentParser(
+    description="Train crop recommendation models and evaluate their accuracy."
+)
+parser.add_argument(
+    "--data",
+    type=Path,
+    default=Path(__file__).resolve().with_name("Crop_recommendation.csv"),
+    help="Path to the crop dataset CSV.",
+)
+parser.add_argument(
+    "--predict",
+    type=float,
+    nargs=7,
+    metavar=("N", "P", "K", "TEMP", "HUMIDITY", "PH", "RAINFALL"),
+    help="Optionally predict a crop using seven feature values in that order.",
+)
+args = parser.parse_args()
+
 print("=" * 60)
 print("       CROP RECOMMENDATION SYSTEM")
 print("=" * 60)
 
-# 2. UPLOAD DATASET
-print("\nUpload Crop_recommendation.csv")
-uploaded = files.upload()
-
-filename = next(iter(uploaded))
-df = pd.read_csv(filename)
+# 2. LOAD DATASET
+df = pd.read_csv(args.data)
 
 print("\nDataset loaded successfully!")
 print("Dataset shape:", df.shape)
@@ -224,59 +246,65 @@ print("\n" + "=" * 60)
 print("          ENTER SOIL AND WEATHER DATA")
 print("=" * 60)
 
-try:
-    N = float(input("Nitrogen (N): "))
-    P = float(input("Phosphorus (P): "))
-    K = float(input("Potassium (K): "))
-    temperature = float(input("Temperature (Celsius): "))
-    humidity = float(input("Humidity (%): "))
-    ph = float(input("Soil pH: "))
-    rainfall = float(input("Rainfall (mm): "))
+if args.predict is None and not sys.stdin.isatty():
+    print("No prediction values supplied; skipping interactive prediction.")
+else:
+    try:
+        if args.predict is None:
+            values = [
+                float(input("Nitrogen (N): ")),
+                float(input("Phosphorus (P): ")),
+                float(input("Potassium (K): ")),
+                float(input("Temperature (Celsius): ")),
+                float(input("Humidity (%): ")),
+                float(input("Soil pH: ")),
+                float(input("Rainfall (mm): ")),
+            ]
+        else:
+            values = args.predict
 
-    values = [N, P, K, temperature, humidity, ph, rainfall]
+        if not all(np.isfinite(v) for v in values):
+            raise ValueError("Please enter finite numeric values.")
 
-    if not all(np.isfinite(v) for v in values):
-        raise ValueError("Please enter finite numeric values.")
+        new_data = pd.DataFrame([values], columns=features)
 
-    new_data = pd.DataFrame([values], columns=features)
+        # Predict with both algorithms
+        dt_crop = dt_model.predict(new_data)[0]
+        rf_crop = rf_model.predict(new_data)[0]
 
-    # Predict with both algorithms
-    dt_crop = dt_model.predict(new_data)[0]
-    rf_crop = rf_model.predict(new_data)[0]
+        print("\n" + "=" * 60)
+        print("          CROP RECOMMENDATION RESULT")
+        print("=" * 60)
 
-    print("\n" + "=" * 60)
-    print("          CROP RECOMMENDATION RESULT")
-    print("=" * 60)
+        print("Decision Tree Recommendation:", dt_crop)
+        print("Random Forest Recommendation:", rf_crop)
 
-    print("Decision Tree Recommendation:", dt_crop)
-    print("Random Forest Recommendation:", rf_crop)
+        # Choose the model with higher held-out test accuracy
+        if rf_accuracy >= dt_accuracy:
+            best_model = rf_model
+            best_name = "Random Forest"
+        else:
+            best_model = dt_model
+            best_name = "Decision Tree"
 
-    # Choose the model with higher held-out test accuracy
-    if rf_accuracy >= dt_accuracy:
-        best_model = rf_model
-        best_name = "Random Forest"
-    else:
-        best_model = dt_model
-        best_name = "Decision Tree"
+        recommended_crop = best_model.predict(new_data)[0]
 
-    recommended_crop = best_model.predict(new_data)[0]
+        print("\nSelected Model:", best_name)
+        print("RECOMMENDED CROP:", recommended_crop)
 
-    print("\nSelected Model:", best_name)
-    print("RECOMMENDED CROP:", recommended_crop)
+        # Show the model's relative class probabilities
+        probabilities = best_model.predict_proba(new_data)[0]
+        classes = best_model.classes_
+        top_indices = np.argsort(probabilities)[::-1][:3]
 
-    # Show the model's relative class probabilities
-    probabilities = best_model.predict_proba(new_data)[0]
-    classes = best_model.classes_
-    top_indices = np.argsort(probabilities)[::-1][:3]
+        print("\nTop predicted crop classes:")
+        for i in top_indices:
+            print(f"{classes[i]}: {probabilities[i] * 100:.2f}%")
 
-    print("\nTop predicted crop classes:")
-    for i in top_indices:
-        print(f"{classes[i]}: {probabilities[i] * 100:.2f}%")
+        print("\nRecommendation generated successfully!")
 
-    print("\nRecommendation generated successfully!")
-
-except ValueError as error:
-    print("\nInvalid input:", error)
+    except ValueError as error:
+        print("\nInvalid input:", error)
 
 print("\nNote: Predictions are based on the training dataset.")
 print("Validate recommendations with local agricultural experts.")
