@@ -24,7 +24,7 @@ python croup.py --predict 90 42 43 20.88 82 6.5 202.9
 
 ## Run on GitHub
 
-GitHub Actions runs the script on pushes and pull requests targeting `main`,
-and can also be started manually from the repository's **Actions** tab. The
-workflow trains and evaluates the models; it skips the interactive prediction
-prompt unless values are supplied with `--predict`.
+GitHub Actions installs the dependencies, checks the script, then trains and
+evaluates the models on pushes and pull requests targeting `main`. You can also
+start it manually from the repository's **Actions** tab. Interactive prediction
+is skipped unless values are supplied with `--predict`.
